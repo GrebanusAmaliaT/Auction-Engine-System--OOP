@@ -2,6 +2,8 @@
 
 The application simulates the management of a luxury auction house, allowing the administration of art pieces (paintings, jewelry) and interactive participation in auctions.
 
+This project is a work in progress!
+
 ## Key Features (Stage I)
 - **Management System**: Adding and organizing art pieces and clients.
 - **OOP Hierarchy**: Utilizing inheritance and abstract classes to differentiate between object types.
@@ -20,7 +22,7 @@ The application simulates the management of a luxury auction house, allowing the
 3. Run the `Main.java` class from the `main` package.
 4. Follow the terminal instructions to place your bids
 
-## 🛠️ Technologies Used
+## Technologies Used
 - Java 17+
 - Java Collections API (List, TreeSet)
 - Java Stream API
