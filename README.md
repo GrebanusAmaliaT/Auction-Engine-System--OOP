@@ -1,6 +1,6 @@
 # Art Auction Management System - Advanced OOP
 
-Project developed for the **Advanced Object-Oriented Programming** course. The application simulates the management of a luxury auction house, allowing the administration of art pieces (paintings, jewelry) and interactive participation in auctions.
+The application simulates the management of a luxury auction house, allowing the administration of art pieces (paintings, jewelry) and interactive participation in auctions.
 
 ## Key Features (Stage I)
 - **Management System**: Adding and organizing art pieces and clients.
