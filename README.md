@@ -11,33 +11,36 @@ A professional Java-based simulation engine for high-end art auctions. This proj
 
 ---
 
-## System Specifications (Project Requirements)
+## System Specifications
 
 ### 1. System Objects (8 Types)
-The following entities define the core structure of the application:
-1. **ArtPiece (Abstract)**: The base class for all auctionable items.
-2. **Painting**: Specific art type inheriting from `ArtPiece` (with technique attributes).
-3. **Jewelry**: Specific art type inheriting from `ArtPiece` (with carat attributes).
-4. **Client**: The entity representing the user with a specific budget.
-5. **Bid**: A model representing a financial offer made by a client.
-6. **AuctionService**: The logic engine managing the business flow.
-7. **BiddingBot**: An automated entity designed to compete against the user.
-8. **InventoryCatalog**: A specialized collection (`TreeSet`) for real-time price-based sorting.
+*Where to find them in the code:*
+
+1. **ArtPiece (Abstract)**: Found in `model/ArtPiece.java`. The base for all items.
+2. **Painting**: Found in `model/Painting.java`. Extends `ArtPiece` with technique details.
+3. **Jewelry**: Found in `model/Jewelry.java`. Extends `ArtPiece` with carat details.
+4. **Client**: Found in `model/Client.java`. Manages user identity and budget.
+5. **Bid**: Found in `model/Bid.java`. Records the "who, when, and how much" of an offer.
+6. **AuctionService**: Found in `service/AuctionService.java`. The main controller.
+7. **BiddingBot**: Simulated logic within `AuctionService.java` using `java.util.Random`.
+8. **InventoryCatalog**: Represented by the `TreeSet<ArtPiece>` collection in the service layer.
 
 ### 2. Actions & Queries (10 Actions)
-Operations available within the current system:
-1. **Add Art Piece**: Insert a new item into the inventory.
-2. **Register Client**: Add a new participant to the system.
-3. **Place Bid**: Submit a new financial offer for a specific item.
-4. **Automated Counter-Bid**: Bot-generated response based on random logic.
-5. **Display Sorted Catalog**: Query the system for items ordered by price ($O(\log n)$).
-6. **Get Random Piece**: Retrieve an item at random to initiate an auction round.
-7. **Search Piece by ID**: Efficiently find an item using Java Streams.
-8. **Update Current Price**: Real-time state change of an `ArtPiece` object.
-9. **Refresh Catalog State**: Re-sorting the `TreeSet` after a price update.
-10. **Validate User Input**: Ensuring numeric and logical integrity of terminal data.
+*How they are implemented:*
+
+1. **Add Art Piece**: Handled by `addArtPiece(ArtPiece piece)` in the service.
+2. **Register Client**: Handled by `registerClient(Client client)`.
+3. **Place Bid**: Interactive loop in `startInteractiveAuction` where user input is processed.
+4. **Automated Counter-Bid**: The "Bot Logic" section using randomized probability (30% exit chance).
+5. **Display Sorted Catalog**: The `displaySortedCatalog()` query using the `TreeSet` iterator.
+6. **Get Random Piece**: The `getRandomPiece()` method using `Random.nextInt()`.
+7. **Search Piece by ID**: Implemented via **Java Stream API** (filter/findFirst) in the service.
+8. **Update Current Price**: Handled by `piece.setCurrentPrice(yourBid)` to maintain object state.
+9. **Refresh Catalog State**: The `refreshSortedCatalog()` method which forces `TreeSet` re-sorting.
+10. **Validate User Input**: `scanner.hasNextDouble()` checks to prevent crashes on invalid input.
 
 ---
+
 
 ## Project Structure
 - `model`: Contains system entities (`ArtPiece`, `Painting`, `Jewelry`, `Client`, `Bid`).
