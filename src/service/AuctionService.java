@@ -29,8 +29,7 @@ public class AuctionService {
             }
         }
     }
-
-    public void startInteractiveAuction(int pieceId, Client user) {
+    public void startInteractiveAuction(int pieceId, Client user, Scanner scanner) {
         Random random = new Random();
 
         ArtPiece piece = inventory.stream()
@@ -43,67 +42,69 @@ public class AuctionService {
             return;
         }
 
-        // Try-with-resources to prevent Scanner resource leaks
-        try (Scanner scanner = new Scanner(System.in)) {
-            System.out.println("\n===========================================");
-            System.out.println("THE AUCTION HAS STARTED: " + piece.getTitle());
-            System.out.println("Artist: " + piece.getArtist());
-            System.out.println("Current Starting Price: " + piece.getCurrentPrice() + " EUR");
-            System.out.println("===========================================");
+        System.out.println("\n===========================================");
+        System.out.println("THE AUCTION HAS STARTED: " + piece.getTitle());
+        System.out.println("Artist: " + piece.getArtist());
+        System.out.println("Current Starting Price: " + piece.getCurrentPrice() + " EUR");
+        System.out.println("===========================================");
 
-            boolean active = true;
-            while (active) {
-                System.out.print("\nYour bid (Enter a sum higher than " + piece.getCurrentPrice() + " or 0 to withdraw): ");
+        boolean active = true;
+        while (active) {
+            System.out.print("\nYour bid (Enter a sum higher than " + piece.getCurrentPrice() + " or 0 to withdraw): ");
+            
+            if (!scanner.hasNextDouble()) {
+                System.out.println("Please enter a valid numeric value!");
+                scanner.next(); 
+                continue;
+            }
+
+            double yourBid = scanner.nextDouble();
+
+            if (yourBid <= piece.getCurrentPrice()) {
+                System.out.println("\nYou have withdrawn from the auction. The Bot wins the piece!");
+                active = false;
+                break;
+            }
+
+            piece.setCurrentPrice(yourBid);
+            refreshSortedCatalog(piece);
+            bidHistory.add(new Bid(user.getId(), piece.getId(), yourBid));
+
+            System.out.println("Success! You bid " + yourBid + " EUR. Waiting for the bot...");
+
+            try { 
+                Thread.sleep(1200); 
+            } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
+            }
+
+            if (random.nextInt(100) > 70) {
+                System.out.println("\n[BOT]: That's too rich for my blood. I'm out!");
+                System.out.println("CONGRATULATIONS! You won the piece: " + piece.getTitle());
+                active = false;
+            } else {
+                double percentageExtra = 0.01 + (0.07 - 0.01) * random.nextDouble();
+                double extraSum = piece.getCurrentPrice() * percentageExtra;
+                double botNewPrice = piece.getCurrentPrice() + extraSum;
                 
-                // Input validation
-                if (!scanner.hasNextDouble()) {
-                    System.out.println("Please enter a valid numeric value!");
-                    scanner.next(); 
-                    continue;
-                }
+                botNewPrice = Math.round(botNewPrice / 100.0) * 100.0;
 
-                double yourBid = scanner.nextDouble();
-
-                // Check if user wants to withdraw or bid is too low
-                if (yourBid <= piece.getCurrentPrice()) {
-                    System.out.println("\nYou have withdrawn from the auction. The Bot wins the piece!");
-                    active = false;
-                    break;
-                }
-
-                piece.setCurrentPrice(yourBid);
+                piece.setCurrentPrice(botNewPrice);
                 refreshSortedCatalog(piece);
-                bidHistory.add(new Bid(user.getId(), piece.getId(), yourBid));
-
-                System.out.println("Success! You bid " + yourBid + " EUR. Waiting for the bot...");
                 
-                try { 
-                    Thread.sleep(1200); 
-                } catch (InterruptedException e) { 
-                    Thread.currentThread().interrupt(); 
-                }
-
-                if (random.nextInt(100) > 70) {
-                    System.out.println("\n[BOT]: That's too rich for my blood. I'm out!");
-                    System.out.println("CONGRATULATIONS! You won the piece: " + piece.getTitle());
-                    active = false;
-                } else {
-                    double percentageExtra = 0.01 + (0.07 - 0.01) * random.nextDouble();
-                    double extraSum = piece.getCurrentPrice() * percentageExtra;
-                    
-                    double botNewPrice = piece.getCurrentPrice() + extraSum;
-                    
-                    botNewPrice = Math.round(botNewPrice / 100.0) * 100.0;
-
-                    piece.setCurrentPrice(botNewPrice);
-                    refreshSortedCatalog(piece);
-                    
-                    System.out.println("\n[BOT]: I placed a bid of " + botNewPrice + " EUR!");
-                }
+                System.out.println("\n[BOT]: I placed a bid of " + botNewPrice + " EUR!");
             }
         } 
         
         System.out.println("\nAuction finalized.");
+    }
+    
+    public ArtPiece getRandomPiece() {
+        if (inventory.isEmpty()) return null;
+        
+        Random random = new Random();
+        int randomIndex = random.nextInt(inventory.size());
+        return inventory.get(randomIndex);
     }
 
     private void refreshSortedCatalog(ArtPiece p) {
