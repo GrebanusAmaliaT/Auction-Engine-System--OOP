@@ -1,16 +1,19 @@
-# Compiled class files
+# --- Java Compiled Files ---
 *.class
+bin/
+out/
 
-# Log files
-*.log
+# --- IDE specific files (VS Code, IntelliJ, Eclipse) ---
+.vscode/
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+.factorypath
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# --- Package & Library Files ---
+# Nu urcam driverul de Postgres sau alte librarii externe
 *.jar
 *.war
 *.nar
@@ -19,15 +22,21 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+# --- Project Specific Data (Etapa II) ---
+# Nu urcam logurile de testare (audit) pe GitHub
+audit_log.csv
+*.log
 
-# IDE specific files (IntelliJ, Eclipse, VS Code)
-.idea/
-*.iml
-.vscode/
-.settings/
-.classpath
-.project
-bin/
-out/
+# --- Local Configuration ---
+# Daca muti parolele in fisiere separate, acestea vor fi ignorate
+*.properties
+*.env
+
+# --- OS Specific Files ---
+Thumbs.db
+.DS_Store
+
+# --- Others ---
+*.ctxt
+.mtj.tmp/
+hs_err_pid*

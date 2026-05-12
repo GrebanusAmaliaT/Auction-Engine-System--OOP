@@ -1,59 +1,60 @@
-# Auction-Engine-System-OOP
+# Auction-Engine-System-OOP (Stage II)
 
-A professional Java-based simulation engine for high-end art auctions. This project focuses on clean **Object-Oriented Programming (OOP)** architecture, demonstrating advanced concepts like polymorphism, custom sorting, and interactive process simulation.
+A professional Java-based simulation engine for high-end art auctions, now upgraded with **Database Persistence** and **Audit Logging**. This project demonstrates a complete transition from in-memory storage to a persistent architecture using **PostgreSQL** and **JDBC**.
 
-## Key Features (Stage I)
-- **Management System**: Adding and organizing art pieces and clients.
-- **OOP Hierarchy**: Utilizing inheritance and abstract classes to differentiate between object types.
-- **Dynamic Catalog**: Automatic display of art pieces sorted by price using `TreeSet`.
-- **Interactive Auction Engine**: Real-time console auction simulation against a bot with randomized behavior and rounded bidding increments.
-- **Data Validation**: Handling user input to prevent system crashes and ensure logical bidding.
-
----
-
-## System Specifications
-
-### 1. System Objects (8 Types)
-*Where to find them in the code:*
-
-1. **ArtPiece (Abstract)**: Found in `model/ArtPiece.java`. The base for all items.
-2. **Painting**: Found in `model/Painting.java`. Extends `ArtPiece` with technique details.
-3. **Jewelry**: Found in `model/Jewelry.java`. Extends `ArtPiece` with carat details.
-4. **Client**: Found in `model/Client.java`. Manages user identity and budget.
-5. **Bid**: Found in `model/Bid.java`. Records the "who, when, and how much" of an offer.
-6. **AuctionService**: Found in `service/AuctionService.java`. The main controller.
-7. **BiddingBot**: Simulated logic within `AuctionService.java` using `java.util.Random`.
-8. **InventoryCatalog**: Represented by the `TreeSet<ArtPiece>` collection in the service layer.
-
-### 2. Actions & Queries (10 Actions)
-*How they are implemented:*
-
-1. **Add Art Piece**: Handled by `addArtPiece(ArtPiece piece)` in the service.
-2. **Register Client**: Handled by `registerClient(Client client)`.
-3. **Place Bid**: Interactive loop in `startInteractiveAuction` where user input is processed.
-4. **Automated Counter-Bid**: The "Bot Logic" section using randomized probability (30% exit chance).
-5. **Display Sorted Catalog**: The `displaySortedCatalog()` query using the `TreeSet` iterator.
-6. **Get Random Piece**: The `getRandomPiece()` method using `Random.nextInt()`.
-7. **Search Piece by ID**: Implemented via **Java Stream API** (filter/findFirst) in the service.
-8. **Update Current Price**: Handled by `piece.setCurrentPrice(yourBid)` to maintain object state.
-9. **Refresh Catalog State**: The `refreshSortedCatalog()` method which forces `TreeSet` re-sorting.
-10. **Validate User Input**: `scanner.hasNextDouble()` checks to prevent crashes on invalid input.
+## Key Features (Stage II Upgrades)
+- **Database Persistence**: All data (Clients, Art Pieces, Bids) is stored in a **PostgreSQL** database.
+- **Singleton Repositories**: Implementation of the **Repository Pattern** with Singleton access to ensure efficient database connections and resource management.
+- **Audit Logging**: Automatic logging of all system actions (bid placement, auction wins, loss events) into a **CSV file** with precise timestamps.
+- **Financial Dashboard**: Real-time calculation of **User Budget**, **Assets Value** (portfolio), and **Total Net Worth** (Cash + Assets).
+- **Real-World Rivals**: Auction simulation against real historical figures and billionaires (NPCs) loaded dynamically from the database.
 
 ---
 
+## System Specifications (Stage II)
+
+### 1. Persistence Layer (CRUD Operations)
+*Implemented via JDBC in the `src.repository` package:*
+
+* **ClientRepository**: Manages player and NPC profiles. Handles budget updates after purchases and identifies rivals.
+* **ArtPieceRepository**: Handles polymorphic storage of `Painting` and `Jewelry` using a discriminator column (`type`).
+* **BidRepository**: Maintains a permanent record of all bidding history for transparency.
+* **UserInventoryRepository**: A specialized service that calculates the real-time value of the pieces currently owned by the user.
+
+### 2. Service Layer & Logic
+* **DatabaseConfig**: Singleton class for managing the **PostgreSQL Connection pool** and credentials.
+* **AuditService**: Writes to `audit_log.csv` for every significant system event, ensuring a trail of operations.
+* **AuctionService 2.0**: Enhanced engine that synchronizes the interactive console loop with the SQL database.
+
+---
+
+## System Objects & Hierarchy
+1.  **ArtPiece (Abstract)**: Base entity for all collectables.
+2.  **Painting**: Inherits `ArtPiece`, adds `technique` (e.g., Oil, Tempera).
+3.  **Jewelry**: Inherits `ArtPiece`, adds `material` and `carats`.
+4.  **Client**: Represents both the User and NPCs (distinguished by the `isNpc` flag).
+5.  **Bid**: Persistent record containing `clientId`, `pieceId`, and `value`.
+
+---
 
 ## Project Structure
-- `model`: Contains system entities (`ArtPiece`, `Painting`, `Jewelry`, `Client`, `Bid`).
-- `service`: Includes business logic and the auction simulation engine (`AuctionService`).
-- `main`: Entry point of the application.
+- `src.model`: System entities and domain objects.
+- `src.repository`: Data Access Objects (DAO) using JDBC and SQL queries.
+- `src.service`: Business logic, Auction Engine, and Audit Logging.
+- `src.config`: Database connection settings and environment setup.
+- `src.main`: Console-based interactive menu and application entry point.
 
 ## How to Run
-1. Clone the repository.
-2. Open the project in an IDE (IntelliJ IDEA / Eclipse / VS Code).
-3. Run the `Main.java` class from the `main` package.
-4. Follow the terminal instructions to place your bids.
+1.  **Database Setup**: 
+    - Create a PostgreSQL database.
+    - Run the SQL setup scripts to create tables (`clients`, `art_pieces`, `bids`).
+2.  **Configuration**: Update `src/config/DatabaseConfig.java` with your local database URL, username, and password.
+3.  **Drivers**: Ensure the **PostgreSQL JDBC Driver** (`.jar`) is added to the project's **Referenced Libraries**.
+4.  **Run**: Execute `Main.java` and follow the on-screen instructions to bid against rivals and build your empire.
 
 ## Technologies Used
-- **Java 17+**
-- **Java Collections API** (List, TreeSet)
+- **Java 17+** (or JRE 1.8 compatible)
+- **JDBC** (Java Database Connectivity)
+- **PostgreSQL 16**
 - **Java Stream API**
+- **CSV I/O** (Audit Logging)

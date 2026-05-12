@@ -1,40 +1,60 @@
 package src.main;
 
 import src.model.*;
+import src.repository.*;
 import src.service.AuctionService;
-import java.util.Scanner;
+import java.sql.SQLException;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
         AuctionService auctionService = new AuctionService();
-        Scanner mainScanner = new Scanner(System.in);
+        ClientRepository clientRepo = ClientRepository.getInstance();
+        ArtPieceRepository artRepo = ArtPieceRepository.getInstance();
 
-        auctionService.addArtPiece(new Painting(1, "Summer Garden", "Monet", 12000.0, "Oil"));
-        auctionService.addArtPiece(new Jewelry(2, "Royal Tiara", "Unknown", 45000.0, "Gold/Diamonds", 24));
-        auctionService.addArtPiece(new Painting(3, "Abstract Blue", "Pollock", 8000.0, "Acrylic"));
-        auctionService.addArtPiece(new Jewelry(4, "Diamond Necklace", "Cartier", 150000.0, "Platinum", 15.5));
-
-        Client user = new Client(777, "User_Boss", 500000.0);
-        auctionService.registerClient(user);
-
-        System.out.println("Welcome to the Elite Auction System, " + user.getName() + "!");
-
-        String choice;
-        do {
-            ArtPiece randomPiece = auctionService.getRandomPiece();
-
-            if (randomPiece != null) {
-                auctionService.startInteractiveAuction(randomPiece.getId(), user, mainScanner);
+        try {
+            Client user = clientRepo.getById(1);
+            if (user == null) {
+                System.out.println("Eroare: Ruleaza scriptul SQL pentru a crea userul!");
+                return;
             }
 
-            System.out.print("\nWould you like to participate in another auction? (yes/no): ");
-            choice = mainScanner.next().toLowerCase();
-
-        } while (choice.equals("yes") || choice.equals("y"));
-
-        System.out.println("\nThank you for participating! Final Catalog Status:");
-        auctionService.displaySortedCatalog();
-        
-        mainScanner.close();
+            boolean running = true;
+            while (running) {
+                System.out.println("\n--- ART TYCOON DASHBOARD ---");
+                auctionService.displayUserStats(user); 
+                
+                System.out.println("1. Start Random Auction");
+                System.out.println("2. View Available Catalog");
+                System.out.println("3. Exit");
+                System.out.print("Choice: ");
+                
+                int choice = scanner.nextInt();
+                switch (choice) {
+                    case 1:
+                        List<ArtPiece> available = artRepo.getAll();
+                        if (!available.isEmpty()) {
+                            ArtPiece randomPiece = available.get(new Random().nextInt(available.size()));
+                            auctionService.startInteractiveAuction(randomPiece.getId(), user.getId(), scanner);
+                            user = clientRepo.getById(user.getId());
+                        } else {
+                            System.out.println("No more pieces available for auction!");
+                        }
+                        break;
+                    case 2:
+                        artRepo.getAll().forEach(p -> 
+                            System.out.println("[" + p.getId() + "] " + p.getTitle() + " - " + p.getCurrentPrice() + " EUR"));
+                        break;
+                    case 3:
+                        running = false;
+                        break;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Database Error: " + e.getMessage());
+        } finally {
+            scanner.close();
+        }
     }
 }

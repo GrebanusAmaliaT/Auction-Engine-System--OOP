@@ -1,114 +1,144 @@
 package src.service;
 
 import src.model.*;
+import src.repository.*;
+
+import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AuctionService {
+    private final ClientRepository clientRepo = ClientRepository.getInstance();
+    private final ArtPieceRepository artRepo = ArtPieceRepository.getInstance();
+    private final BidRepository bidRepo = BidRepository.getInstance();
+    private final UserInventoryRepository inventoryRepo = UserInventoryRepository.getInstance();
+    private final AuditService audit = AuditService.getInstance();
 
-    private List<ArtPiece> inventory = new ArrayList<>();
-    private TreeSet<ArtPiece> sortedCatalog = new TreeSet<>();
-    private List<Client> clients = new ArrayList<>();
-    private List<Bid> bidHistory = new ArrayList<>();
+    public void startInteractiveAuction(int pieceId, int userId, Scanner scanner) {
+        try {
+            Client user = clientRepo.getById(userId);
+            ArtPiece piece = artRepo.getById(pieceId);
+            List<Client> rivals = clientRepo.getAll().stream()
+                    .filter(c -> c.isNpc())
+                    .collect(Collectors.toList());
 
-    public void addArtPiece(ArtPiece piece) {
-        inventory.add(piece);
-        sortedCatalog.add(piece);
-    }
-
-    public void registerClient(Client client) {
-        clients.add(client);
-    }
-
-    public void displaySortedCatalog() {
-        System.out.println("\n--- Current Catalog (Sorted by Price) ---");
-        if (sortedCatalog.isEmpty()) {
-            System.out.println("The catalog is empty.");
-        } else {
-            for (ArtPiece p : sortedCatalog) {
-                System.out.println("[" + p.getId() + "] " + p.getTitle() + " - " + p.getCurrentPrice() + " EUR (" + p.getArtist() + ")");
+            if (piece == null || user == null) {
+                System.out.println("Eroare: Piesa sau Clientul nu exista in DB!");
+                return;
             }
+
+            if (rivals.isEmpty()) {
+                System.out.println("Avertisment: Nu exista rivali (NPCs) in baza de date!");
+            }
+
+            audit.logAction("START_AUCTION_PIECE_" + pieceId);
+            Random random = new Random();
+
+            System.out.println("\n===========================================");
+            System.out.println("    WELCOME TO THE ELITE AUCTION HOUSE     ");
+            System.out.println("===========================================");
+            displayUserStats(user);
+            System.out.println("BIDDING FOR: " + piece.getTitle() + " by " + piece.getArtist());
+            System.out.println("Starting Price: " + piece.getCurrentPrice() + " EUR");
+            System.out.println("===========================================");
+
+            boolean active = true;
+            Client currentWinner = null;
+            int passesInARow = 0;
+
+            while (active) {
+                System.out.print("\nYour bid (current: " + piece.getCurrentPrice() + " EUR) or 0 to pass: ");
+                
+                double yourBid = 0;
+                if (scanner.hasNextDouble()) {
+                    yourBid = scanner.nextDouble();
+                } else {
+                    scanner.next(); 
+                }
+
+                if (yourBid > piece.getCurrentPrice() && yourBid <= user.getBudget()) {
+                    piece.setCurrentPrice(yourBid);
+                    currentWinner = user;
+                    bidRepo.insert(new Bid(user.getId(), piece.getId(), yourBid));
+                    audit.logAction("USER_BID_" + yourBid);
+                    passesInARow = 0; 
+                } else if (yourBid == 0) {
+                    System.out.println("You decided to wait...");
+                    passesInARow++;
+                } else {
+                    System.out.println("Invalid bid! Must be higher than current price and within budget.");
+                    continue;
+                }
+
+                boolean rivalLicitatedInThisRound = false;
+
+                Collections.shuffle(rivals); 
+                for (Client rival : rivals) {
+                    if (currentWinner == null || rival.getId() != currentWinner.getId()) {
+                        
+                        if (random.nextInt(100) < 70 && rival.getBudget() > piece.getCurrentPrice()) {
+                            
+                            double incrementPercent = 0.05 + (0.15 - 0.05) * random.nextDouble();
+                            double rivalBid = piece.getCurrentPrice() * (1 + incrementPercent);
+                            rivalBid = Math.round(rivalBid / 100.0) * 100.0; 
+
+                            if (rivalBid <= rival.getBudget()) {
+                                Thread.sleep(800); 
+                                piece.setCurrentPrice(rivalBid);
+                                currentWinner = rival;
+                                bidRepo.insert(new Bid(rival.getId(), piece.getId(), rivalBid));
+                                
+                                System.out.println("[RIVAL] " + rival.getName() + " bids " + rivalBid + " EUR!");
+                                audit.logAction("RIVAL_BID_" + rival.getName());
+                                rivalLicitatedInThisRound = true;
+                                passesInARow = 0;
+
+                                break; 
+                            }
+                        }
+                    }
+                }
+
+                if (!rivalLicitatedInThisRound && yourBid == 0) {
+                    if (passesInARow >= 1) {
+                        System.out.println("\nGoing once... Going twice... SOLD!");
+                        active = false;
+                    }
+                } else if (!rivalLicitatedInThisRound) {
+                    System.out.println("Nobody else wants to bid right now.");
+                }
+            }
+
+            finalizeAuction(piece, currentWinner, user);
+
+        } catch (Exception e) {
+            System.err.println("Auction Error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
-    public void startInteractiveAuction(int pieceId, Client user, Scanner scanner) {
-        Random random = new Random();
 
-        ArtPiece piece = inventory.stream()
-                .filter(p -> p.getId() == pieceId)
-                .findFirst()
-                .orElse(null);
-
-        if (piece == null) {
-            System.out.println("Art piece with ID " + pieceId + " was not found!");
-            return;
-        }
-
-        System.out.println("\n===========================================");
-        System.out.println("THE AUCTION HAS STARTED: " + piece.getTitle());
-        System.out.println("Artist: " + piece.getArtist());
-        System.out.println("Current Starting Price: " + piece.getCurrentPrice() + " EUR");
-        System.out.println("===========================================");
-
-        boolean active = true;
-        while (active) {
-            System.out.print("\nYour bid (Enter a sum higher than " + piece.getCurrentPrice() + " or 0 to withdraw): ");
+    private void finalizeAuction(ArtPiece piece, Client winner, Client user) throws SQLException {
+        if (winner != null && winner.getId() == user.getId()) {
+            System.out.println("\n🏆 CONGRATULATIONS! You won " + piece.getTitle() + "!");
             
-            if (!scanner.hasNextDouble()) {
-                System.out.println("Please enter a valid numeric value!");
-                scanner.next(); 
-                continue;
-            }
-
-            double yourBid = scanner.nextDouble();
-
-            if (yourBid <= piece.getCurrentPrice()) {
-                System.out.println("\nYou have withdrawn from the auction. The Bot wins the piece!");
-                active = false;
-                break;
-            }
-
-            piece.setCurrentPrice(yourBid);
-            refreshSortedCatalog(piece);
-            bidHistory.add(new Bid(user.getId(), piece.getId(), yourBid));
-
-            System.out.println("Success! You bid " + yourBid + " EUR. Waiting for the bot...");
-
-            try { 
-                Thread.sleep(1200); 
-            } catch (InterruptedException e) { 
-                Thread.currentThread().interrupt(); 
-            }
-
-            if (random.nextInt(100) > 70) {
-                System.out.println("\n[BOT]: That's too rich for my blood. I'm out!");
-                System.out.println("CONGRATULATIONS! You won the piece: " + piece.getTitle());
-                active = false;
-            } else {
-                double percentageExtra = 0.01 + (0.07 - 0.01) * random.nextDouble();
-                double extraSum = piece.getCurrentPrice() * percentageExtra;
-                double botNewPrice = piece.getCurrentPrice() + extraSum;
-                
-                botNewPrice = Math.round(botNewPrice / 100.0) * 100.0;
-
-                piece.setCurrentPrice(botNewPrice);
-                refreshSortedCatalog(piece);
-                
-                System.out.println("\n[BOT]: I placed a bid of " + botNewPrice + " EUR!");
-            }
-        } 
-        
-        System.out.println("\nAuction finalized.");
-    }
-    
-    public ArtPiece getRandomPiece() {
-        if (inventory.isEmpty()) return null;
-        
-        Random random = new Random();
-        int randomIndex = random.nextInt(inventory.size());
-        return inventory.get(randomIndex);
+            user.setBudget(user.getBudget() - piece.getCurrentPrice());
+            clientRepo.update(user);
+            artRepo.update(piece, user.getId()); 
+            
+            audit.logAction("AUCTION_WON_BY_USER");
+        } else {
+            String winnerName = (winner != null) ? winner.getName() : "Nobody";
+            System.out.println("\n Auction ended. Winner: " + winnerName);
+            audit.logAction("AUCTION_LOST_BY_USER");
+        }
     }
 
-    private void refreshSortedCatalog(ArtPiece p) {
-        sortedCatalog.remove(p);
-        sortedCatalog.add(p);
+    public void displayUserStats(Client user) throws SQLException {
+        double assets = inventoryRepo.getTotalAssetsValue(user.getId());
+        System.out.println(">>> PLAYER: " + user.getName());
+        System.out.println(">>> CASH: " + user.getBudget() + " EUR");
+        System.out.println(">>> ASSETS VALUE: " + assets + " EUR");
+        System.out.println(">>> TOTAL NET WORTH: " + (user.getBudget() + assets) + " EUR");
+        System.out.println("-------------------------------------------");
     }
 }
