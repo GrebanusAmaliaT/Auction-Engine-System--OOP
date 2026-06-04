@@ -13,13 +13,32 @@ public abstract class ArtPiece implements Comparable<ArtPiece> {
         this.currentPrice = currentPrice;
     }
 
-    public int getId() { return id; }
-    public String getTitle() { return title; }
-    public String getArtist() { return artist; }
-    public double getCurrentPrice() { return currentPrice; }
-    
-    public void setCurrentPrice(double currentPrice) { 
-        this.currentPrice = currentPrice; 
+    public int getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getArtist() {
+        return artist;
+    }
+
+    public double getCurrentPrice() {
+        return currentPrice;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setArtist(String artist) {
+        this.artist = artist;
+    }
+
+    public void setCurrentPrice(double currentPrice) {
+        this.currentPrice = currentPrice;
     }
 
     @Override

@@ -1,60 +1,185 @@
-# Auction-Engine-System-OOP (Stage II)
+# Auction Engine System OOP
 
-A professional Java-based simulation engine for high-end art auctions, now upgraded with **Database Persistence** and **Audit Logging**. This project demonstrates a complete transition from in-memory storage to a persistent architecture using **PostgreSQL** and **JDBC**.
-
-## Key Features (Stage II Upgrades)
-- **Database Persistence**: All data (Clients, Art Pieces, Bids) is stored in a **PostgreSQL** database.
-- **Singleton Repositories**: Implementation of the **Repository Pattern** with Singleton access to ensure efficient database connections and resource management.
-- **Audit Logging**: Automatic logging of all system actions (bid placement, auction wins, loss events) into a **CSV file** with precise timestamps.
-- **Financial Dashboard**: Real-time calculation of **User Budget**, **Assets Value** (portfolio), and **Total Net Worth** (Cash + Assets).
-- **Real-World Rivals**: Auction simulation against real historical figures and billionaires (NPCs) loaded dynamically from the database.
+Java console application for simulating high-end art auctions.  
+The project uses OOP principles, JDBC persistence with PostgreSQL, and CSV audit logging.
 
 ---
 
-## System Specifications (Stage II)
+## Stage I - OOP System
 
-### 1. Persistence Layer (CRUD Operations)
-*Implemented via JDBC in the `src.repository` package:*
+### System Actions / Queries
 
-* **ClientRepository**: Manages player and NPC profiles. Handles budget updates after purchases and identifies rivals.
-* **ArtPieceRepository**: Handles polymorphic storage of `Painting` and `Jewelry` using a discriminator column (`type`).
-* **BidRepository**: Maintains a permanent record of all bidding history for transparency.
-* **UserInventoryRepository**: A specialized service that calculates the real-time value of the pieces currently owned by the user.
+The system supports the following actions:
 
-### 2. Service Layer & Logic
-* **DatabaseConfig**: Singleton class for managing the **PostgreSQL Connection pool** and credentials.
-* **AuditService**: Writes to `audit_log.csv` for every significant system event, ensuring a trail of operations.
-* **AuctionService 2.0**: Enhanced engine that synchronizes the interactive console loop with the SQL database.
+1. Display user statistics.
+2. Display available art catalog.
+3. Display catalog sorted by price.
+4. Start a random auction.
+5. Place a bid.
+6. Pass a bidding round.
+7. Leave the bidding room.
+8. Simulate NPC rival bids.
+9. Simulate NPC rival withdrawal.
+10. Finalize an auction.
+11. Mark an art piece as sold.
+12. Save bid history.
+13. Save auction result.
+14. Calculate user assets value.
+15. Calculate total net worth.
+
+### Object Types
+
+The project defines at least 8 object types:
+
+1. `ArtPiece`
+2. `Painting`
+3. `Jewelry`
+4. `Client`
+5. `Bid`
+6. `AuctionRecord`
+7. `AuctionHouse`
+8. `InventoryItem`
+
+### OOP Concepts
+
+The project uses:
+
+- encapsulation through private attributes and getters/setters;
+- inheritance through `Painting` and `Jewelry`, which extend `ArtPiece`;
+- polymorphism by storing both paintings and jewelry as `ArtPiece`;
+- service classes for exposing system operations.
+
+### Collections
+
+The project uses multiple collections:
+
+- `List<Client>`
+- `List<ArtPiece>`
+- `List<Bid>`
+- `TreeSet<ArtPiece>` for displaying the catalog sorted by price
 
 ---
 
-## System Objects & Hierarchy
-1.  **ArtPiece (Abstract)**: Base entity for all collectables.
-2.  **Painting**: Inherits `ArtPiece`, adds `technique` (e.g., Oil, Tempera).
-3.  **Jewelry**: Inherits `ArtPiece`, adds `material` and `carats`.
-4.  **Client**: Represents both the User and NPCs (distinguished by the `isNpc` flag).
-5.  **Bid**: Persistent record containing `clientId`, `pieceId`, and `value`.
+## Stage II - Persistence and Audit
 
----
+The project was extended with database persistence using **PostgreSQL** and **JDBC**.
 
-## Project Structure
-- `src.model`: System entities and domain objects.
-- `src.repository`: Data Access Objects (DAO) using JDBC and SQL queries.
-- `src.service`: Business logic, Auction Engine, and Audit Logging.
-- `src.config`: Database connection settings and environment setup.
-- `src.main`: Console-based interactive menu and application entry point.
+### CRUD Classes
 
-## How to Run
-1.  **Database Setup**: 
-    - Create a PostgreSQL database.
-    - Run the SQL setup scripts to create tables (`clients`, `art_pieces`, `bids`).
-2.  **Configuration**: Update `src/config/DatabaseConfig.java` with your local database URL, username, and password.
-3.  **Drivers**: Ensure the **PostgreSQL JDBC Driver** (`.jar`) is added to the project's **Referenced Libraries**.
-4.  **Run**: Execute `Main.java` and follow the on-screen instructions to bid against rivals and build your empire.
+CRUD operations are implemented for at least 4 classes:
 
-## Technologies Used
-- **Java 17+** (or JRE 1.8 compatible)
-- **JDBC** (Java Database Connectivity)
-- **PostgreSQL 16**
-- **Java Stream API**
-- **CSV I/O** (Audit Logging)
+1. `Client`
+2. `ArtPiece`
+3. `Bid`
+4. `AuctionRecord`
+
+### Repository Layer
+
+The project uses a generic repository interface: GenericRepository<T>
+
+Implemented repositories:
+
+- ClientRepository
+- ArtPieceRepository
+- BidRepository
+- AuctionRecordRepository
+- Service Layer
+
+The project uses a generic CRUD service interface: CrudService<T>
+
+Implemented services:
+
+- ClientService
+- ArtPieceService
+- BidService
+- AuctionRecordService
+- AuctionService
+- AuditService
+
+The services are implemented using the Singleton pattern.
+
+### Audit
+
+AuditService writes every important system action to a CSV file:
+
+action_name,timestamp
+
+Example:
+
+CREATE_BID,2026-06-04 21:32:20
+START_AUCTION_PIECE_3,2026-06-04 21:33:10
+AUCTION_WON_BY_USER,2026-06-04 21:35:44
+Database Tables
+
+### Main tables used by the application:
+
+- clients
+- art_pieces
+- bids
+- auction_records
+
+### Project Structure
+src
+ ├── config
+ │    └── DatabaseConfig.java
+ ├── main
+ │    └── Main.java
+ ├── model
+ │    ├── ArtPiece.java
+ │    ├── Painting.java
+ │    ├── Jewelry.java
+ │    ├── Client.java
+ │    ├── Bid.java
+ │    ├── AuctionRecord.java
+ │    ├── AuctionHouse.java
+ │    └── InventoryItem.java
+ ├── repository
+ │    ├── GenericRepository.java
+ │    ├── ClientRepository.java
+ │    ├── ArtPieceRepository.java
+ │    ├── BidRepository.java
+ │    ├── AuctionRecordRepository.java
+ │    └── UserInventoryRepository.java
+ └── service
+      ├── CrudService.java
+      ├── AuctionService.java
+      ├── ClientService.java
+      ├── ArtPieceService.java
+      ├── BidService.java
+      ├── AuctionRecordService.java
+      └── AuditService.java
+
+### How to Run
+1. Set up PostgreSQL
+
+Create the database and run the SQL scripts for:
+- clients
+- art_pieces
+- bids
+- auction_records
+
+2. Set environment variables
+
+PowerShell example:
+
+$env:DB_URL="jdbc:postgresql://localhost:5432/postgres"
+$env:DB_USER="postgres"
+$env:DB_PASS="your_password_here"
+
+3. Add PostgreSQL JDBC Driver
+
+Add the PostgreSQL JDBC .jar file to the project referenced libraries.
+
+4. Run the app
+
+Run:
+
+Main.java
+Technologies Used
+Java
+OOP
+JDBC
+PostgreSQL
+Java Collections
+Java Stream API
+CSV File I/O

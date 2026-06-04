@@ -1,9 +1,6 @@
-# --- Java Compiled Files ---
 *.class
 bin/
 out/
-
-# --- IDE specific files (VS Code, IntelliJ, Eclipse) ---
 .vscode/
 .idea/
 *.iml
@@ -12,9 +9,9 @@ out/
 .project
 .factorypath
 
-# --- Package & Library Files ---
-# Nu urcam driverul de Postgres sau alte librarii externe
 *.jar
+*.jar
+!lib/*.jar
 *.war
 *.nar
 *.ear
@@ -22,21 +19,13 @@ out/
 *.tar.gz
 *.rar
 
-# --- Project Specific Data (Etapa II) ---
-# Nu urcam logurile de testare (audit) pe GitHub
 audit_log.csv
 *.log
-
-# --- Local Configuration ---
-# Daca muti parolele in fisiere separate, acestea vor fi ignorate
 *.properties
 *.env
-
-# --- OS Specific Files ---
 Thumbs.db
 .DS_Store
 
-# --- Others ---
 *.ctxt
 .mtj.tmp/
 hs_err_pid*

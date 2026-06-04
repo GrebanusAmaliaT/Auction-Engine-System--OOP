@@ -72,22 +72,49 @@ public class ArtPieceRepository implements GenericRepository<ArtPiece> {
         return pieces;
     }
 
-    public void update(ArtPiece piece, int ownerId) throws SQLException {
-        String sql = "UPDATE art_pieces SET current_price = ?, is_sold = ?, owner_id = ? WHERE id = ?";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setDouble(1, piece.getCurrentPrice());
-            pstmt.setBoolean(2, true); 
-            pstmt.setInt(3, ownerId);
-            pstmt.setInt(4, piece.getId());
-            pstmt.executeUpdate();
-        }
+    public void markAsSold(ArtPiece piece, int ownerId) throws SQLException {
+    String sql = "UPDATE art_pieces SET current_price = ?, is_sold = ?, owner_id = ? WHERE id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setDouble(1, piece.getCurrentPrice());
+        pstmt.setBoolean(2, true);
+        pstmt.setInt(3, ownerId);
+        pstmt.setInt(4, piece.getId());
+
+        pstmt.executeUpdate();
+    }
     }
 
     @Override
     public void update(ArtPiece piece) throws SQLException {
-        throw new UnsupportedOperationException("Foloseste update(piece, ownerId) pentru vanzare.");
+    String sql = "UPDATE art_pieces SET title = ?, artist = ?, current_price = ?, type = ?, technique = ?, material = ?, carats = ? WHERE id = ?";
+
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, piece.getTitle());
+        pstmt.setString(2, piece.getArtist());
+        pstmt.setDouble(3, piece.getCurrentPrice());
+
+        if (piece instanceof Painting) {
+            pstmt.setString(4, "Painting");
+            pstmt.setString(5, ((Painting) piece).getTechnique());
+            pstmt.setNull(6, Types.VARCHAR);
+            pstmt.setNull(7, Types.DOUBLE);
+        } else if (piece instanceof Jewelry) {
+            pstmt.setString(4, "Jewelry");
+            pstmt.setNull(5, Types.VARCHAR);
+            pstmt.setString(6, ((Jewelry) piece).getMaterial());
+            pstmt.setDouble(7, ((Jewelry) piece).getCarats());
+        }
+
+        pstmt.setInt(8, piece.getId());
+
+        pstmt.executeUpdate();
     }
+}
 
     @Override
     public void delete(int id) throws SQLException {
