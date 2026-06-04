@@ -119,35 +119,39 @@ Database Tables
 - auction_records
 
 ### Project Structure
+
+```text
 src
- ├── config
- │    └── DatabaseConfig.java
- ├── main
- │    └── Main.java
- ├── model
- │    ├── ArtPiece.java
- │    ├── Painting.java
- │    ├── Jewelry.java
- │    ├── Client.java
- │    ├── Bid.java
- │    ├── AuctionRecord.java
- │    ├── AuctionHouse.java
- │    └── InventoryItem.java
- ├── repository
- │    ├── GenericRepository.java
- │    ├── ClientRepository.java
- │    ├── ArtPieceRepository.java
- │    ├── BidRepository.java
- │    ├── AuctionRecordRepository.java
- │    └── UserInventoryRepository.java
- └── service
-      ├── CrudService.java
-      ├── AuctionService.java
-      ├── ClientService.java
-      ├── ArtPieceService.java
-      ├── BidService.java
-      ├── AuctionRecordService.java
-      └── AuditService.java
+├── config
+│   └── DatabaseConfig.java
+├── main
+│   └── Main.java
+├── model
+│   ├── ArtPiece.java
+│   ├── Painting.java
+│   ├── Jewelry.java
+│   ├── Client.java
+│   ├── Bid.java
+│   ├── AuctionRecord.java
+│   ├── AuctionHouse.java
+│   └── InventoryItem.java
+├── repository
+│   ├── GenericRepository.java
+│   ├── ClientRepository.java
+│   ├── ArtPieceRepository.java
+│   ├── BidRepository.java
+│   ├── AuctionRecordRepository.java
+│   └── UserInventoryRepository.java
+└── service
+    ├── CrudService.java
+    ├── AuctionService.java
+    ├── ClientService.java
+    ├── ArtPieceService.java
+    ├── BidService.java
+    ├── AuctionRecordService.java
+    └── AuditService.java
+```
+
 
 ### How to Run
 1. Set up PostgreSQL
