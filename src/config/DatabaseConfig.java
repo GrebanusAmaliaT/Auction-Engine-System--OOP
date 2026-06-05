@@ -20,7 +20,7 @@ public class DatabaseConfig {
 
         if (connection == null || connection.isClosed()) {
             try {
-                Class.forName("org.postgresql.Driver");
+                Class.forName("org.postgresql.Driver"); 
                 connection = DriverManager.getConnection(URL, USER, PASS);
             } catch (ClassNotFoundException e) {
                 throw new SQLException("PostgreSQL driver not found!", e);

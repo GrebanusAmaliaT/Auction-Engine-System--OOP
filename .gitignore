@@ -11,7 +11,8 @@ out/
 
 *.jar
 *.jar
-!lib/*.jar
+*.jar
+!lib/postgresql-42.7.3.jar
 *.war
 *.nar
 *.ear

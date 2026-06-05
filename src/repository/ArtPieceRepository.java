@@ -12,13 +12,16 @@ public class ArtPieceRepository implements GenericRepository<ArtPiece> {
     private ArtPieceRepository() {}
 
     public static ArtPieceRepository getInstance() {
-        if (instance == null) instance = new ArtPieceRepository();
+        if (instance == null) 
+            instance = new ArtPieceRepository();
+       
         return instance;
     }
 
     @Override
     public void insert(ArtPiece piece) throws SQLException {
         String sql = "INSERT INTO art_pieces (title, artist, current_price, type, technique, material, carats, is_sold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             

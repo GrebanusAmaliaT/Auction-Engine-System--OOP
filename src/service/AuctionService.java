@@ -1,7 +1,6 @@
 package src.service;
 
 import src.model.*;
-import src.repository.UserInventoryRepository;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -9,19 +8,26 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class AuctionService {
-    private final UserInventoryRepository inventoryRepo = UserInventoryRepository.getInstance();
     private final AuditService audit = AuditService.getInstance();
 
-    private final ClientService clientService = ClientService.getInstance();
-    private final ArtPieceService artPieceService = ArtPieceService.getInstance();
-    private final BidService bidService = BidService.getInstance();
-    private final AuctionRecordService auctionRecordService = AuctionRecordService.getInstance();
+private final ClientService clientService = ClientService.getInstance();
+private final ArtPieceService artPieceService = ArtPieceService.getInstance();
+private final BidService bidService = BidService.getInstance();
+private final AuctionRecordService auctionRecordService = AuctionRecordService.getInstance();
+private final InventoryItemService inventoryItemService = InventoryItemService.getInstance();
+
+private final AuctionHouse auctionHouse =
+        new AuctionHouse(1, "Elite Auction House", "Bucharest", 0.10);
 
     private enum RivalAction {
         BID,
         PASS,
         LEAVE
     }
+
+    public AuctionHouse getAuctionHouse() {
+    return auctionHouse;
+}
 
     private static class RivalDecision {
         private final Client rival;
@@ -133,7 +139,8 @@ public class AuctionService {
                     } else if (yourBid == 0) {
                         System.out.println("You passed this round.");
 
-                    } else if (yourBid > piece.getCurrentPrice() && yourBid <= user.getBudget()) {
+                    } else if (yourBid > piece.getCurrentPrice()
+        && auctionHouse.calculateTotalPrice(yourBid) <= user.getBudget()) {
                         piece.setCurrentPrice(yourBid);
                         currentWinner = user;
 
@@ -313,7 +320,7 @@ public class AuctionService {
             double rivalBid = currentPrice * (1 + incrementPercent);
             rivalBid = Math.round(rivalBid / 100.0) * 100.0;
 
-            if (rivalBid <= rival.getBudget() && rivalBid > currentPrice) {
+            if (auctionHouse.calculateTotalPrice(rivalBid) <= rival.getBudget() && rivalBid > currentPrice) {
                 return new RivalDecision(
                         rival,
                         RivalAction.BID,
@@ -333,38 +340,78 @@ public class AuctionService {
         );
     }
 
-    private void finalizeAuction(ArtPiece piece, Client winner, Client user) throws SQLException {
-        if (winner != null) {
-            winner.setBudget(winner.getBudget() - piece.getCurrentPrice());
+    public void displayUserInventory(int userId) throws SQLException {
+        List<InventoryItem> inventory = inventoryItemService.getByClientId(userId);
 
-            clientService.update(winner);
-            artPieceService.markAsSold(piece, winner.getId());
+        audit.logAction("DISPLAY_USER_INVENTORY");
 
-            auctionRecordService.create(
-                    new AuctionRecord(piece.getId(), winner.getId(), piece.getCurrentPrice())
-            );
+        System.out.println("\n--- MY INVENTORY ---");
 
-            if (winner.getId() == user.getId()) {
-                System.out.println("\nCONGRATULATIONS! You won " + piece.getTitle() + "!");
-                audit.logAction("AUCTION_WON_BY_USER");
-            } else {
-                System.out.println("\nAuction ended. Winner: " + winner.getName());
-                audit.logAction("AUCTION_LOST_BY_USER");
+        if (inventory.isEmpty()) {
+            System.out.println("You do not own any art pieces yet.");
+            return;
+        }
+
+        for (InventoryItem item : inventory) {
+            ArtPiece piece = artPieceService.getById(item.getArtPieceId());
+
+            if (piece != null) {
+                System.out.println("Inventory item #" + item.getId());
+                System.out.println("Piece: " + piece.getTitle() + " by " + piece.getArtist());
+                System.out.println("Current value: " + piece.getCurrentPrice() + " EUR");
+                System.out.println("Purchase price paid: " + item.getPurchasePrice() + " EUR");
+                System.out.println("Acquired at: " + item.getAcquiredAt());
+                System.out.println("-------------------------------------------");
             }
-        } else {
-            auctionRecordService.create(
-                    new AuctionRecord(piece.getId(), null, piece.getCurrentPrice())
-            );
+        }
+    }
 
-            System.out.println("\nAuction ended. Nobody bought the piece.");
-            audit.logAction("AUCTION_ENDED_WITHOUT_WINNER");
+
+    private void finalizeAuction(ArtPiece piece, Client winner, Client user) throws SQLException {
+    if (winner != null) {
+        double hammerPrice = piece.getCurrentPrice();
+        double totalPayment = auctionHouse.calculateTotalPrice(hammerPrice);
+
+        winner.setBudget(winner.getBudget() - totalPayment);
+
+        clientService.update(winner);
+        artPieceService.markAsSold(piece, winner.getId());
+
+        inventoryItemService.create(
+                new InventoryItem(winner.getId(), piece.getId(), totalPayment)
+        );
+
+        auctionRecordService.create(
+                new AuctionRecord(piece.getId(), winner.getId(), hammerPrice)
+        );
+
+        System.out.println("\nAuction House: " + auctionHouse.getName());
+        System.out.println("Hammer price: " + hammerPrice + " EUR");
+        System.out.println("Buyer premium: " + auctionHouse.calculateBuyerPremium(hammerPrice) + " EUR");
+        System.out.println("Total payment: " + totalPayment + " EUR");
+
+        if (winner.getId() == user.getId()) {
+            System.out.println("\nCONGRATULATIONS! You won " + piece.getTitle() + "!");
+            System.out.println("The item was added to your inventory.");
+            audit.logAction("AUCTION_WON_BY_USER");
+        } else {
+            System.out.println("\nAuction ended. Winner: " + winner.getName());
+            audit.logAction("AUCTION_LOST_BY_USER");
+        }
+    } else {
+        auctionRecordService.create(
+                new AuctionRecord(piece.getId(), null, piece.getCurrentPrice())
+        );
+
+        System.out.println("\nAuction ended. Nobody bought the piece.");
+        audit.logAction("AUCTION_ENDED_WITHOUT_WINNER");
         }
     }
 
     public void displayUserStats(Client user) throws SQLException {
         audit.logAction("DISPLAY_USER_STATS");
 
-        double assets = inventoryRepo.getTotalAssetsValue(user.getId());
+        double assets = inventoryItemService.getTotalValueForClient(user.getId());
 
         System.out.println(">>> PLAYER: " + user.getName());
         System.out.println(">>> CASH: " + user.getBudget() + " EUR");
