@@ -36,7 +36,6 @@ public class ClientRepository implements GenericRepository<Client> {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    // Creăm obiectul și setăm manual is_npc din DB
                     Client client = new Client(rs.getInt("id"), rs.getString("name"), rs.getDouble("budget"));
                     client.setNpc(rs.getBoolean("is_npc"));
                     return client;
