@@ -9,12 +9,11 @@ import java.util.stream.Collectors;
 
 public class AuctionService {
     private final AuditService audit = AuditService.getInstance();
-
-private final ClientService clientService = ClientService.getInstance();
-private final ArtPieceService artPieceService = ArtPieceService.getInstance();
-private final BidService bidService = BidService.getInstance();
-private final AuctionRecordService auctionRecordService = AuctionRecordService.getInstance();
-private final InventoryItemService inventoryItemService = InventoryItemService.getInstance();
+    private final ClientService clientService = ClientService.getInstance();
+    private final ArtPieceService artPieceService = ArtPieceService.getInstance();
+    private final BidService bidService = BidService.getInstance();
+    private final AuctionRecordService auctionRecordService = AuctionRecordService.getInstance();
+    private final InventoryItemService inventoryItemService = InventoryItemService.getInstance();
 
 private final AuctionHouse auctionHouse =
         new AuctionHouse(1, "Elite Auction House", "Bucharest", 0.10);
